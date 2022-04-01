@@ -1,12 +1,8 @@
-import {
-  Button,
-  Center,
-  Flex,
-  Input,
-  MenuOptionGroup,
-  Select,
-} from '@chakra-ui/react';
+import { Button, Center, Flex, Input, Select } from '@chakra-ui/react';
+import axios from 'axios';
 import React, { useState } from 'react';
+import { PokemonDetailedResult } from '../interfaces/pokemon';
+import PokemonModal from './PokemonModal';
 
 interface SearchBarProps {
   handleNumPokemonSelected: (num: number) => void;
@@ -14,17 +10,35 @@ interface SearchBarProps {
 
 const SearchBar: React.FC<SearchBarProps> = ({ handleNumPokemonSelected }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [pokemonInformation, setPokemonInformation] =
+    useState<PokemonDetailedResult>();
+  const [openModal, setOpenModal] = useState(false);
 
   const onSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     handleNumPokemonSelected(parseInt(e.target.value));
   };
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     if (!searchTerm) return;
 
-    //do something with search term
+    const searchResult: PokemonDetailedResult = await axios
+      .get(
+        `https://pokeapi.co/api/v2/pokemon/${searchTerm.toLocaleLowerCase()}`
+      )
+      .then((response) => response.data)
+      .catch((err: Error) =>
+        console.log(`Error getting pokemon response: ${err.message}`)
+      );
 
-    setSearchTerm('');
+    if (!searchResult) return;
+
+    setPokemonInformation(searchResult);
+    setOpenModal(true);
+
+    console.log('searchResult: ', searchResult);
+
+    // //do something with search term
+    // setSearchTerm('');
   };
 
   return (
@@ -47,6 +61,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ handleNumPokemonSelected }) => {
           value={searchTerm}
         />
         <Button onClick={() => onSubmit()}>Search</Button>
+        {pokemonInformation ? (
+          <PokemonModal
+            pokemonInformation={pokemonInformation}
+            openModal={openModal}
+          />
+        ) : (
+          ''
+        )}
       </Flex>
     </Center>
   );
